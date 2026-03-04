@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# UAE-Oman Border Wait Times
 
-## Getting Started
+Live estimated wait times at UAE-Oman border crossings, displayed on an interactive map with military base locations.
 
-First, run the development server:
+## Features
+
+- Real-time border delay estimates for 6 crossings (Hatta, Al Ain, Khatmat Malaha, Wam, Dibba, Tibat)
+- Direction toggle: UAE → Oman / Oman → UAE
+- 30 military bases across UAE & Oman with multi-nation flag markers
+- Hover tooltips for all markers
+- Auto-refresh every 15 minutes
+- Free map tiles (OpenStreetMap) — no client-side API key needed
+
+## How It Works
+
+The app uses the **Google Routes API** to calculate ETA from ~5km before to ~5km after each border crossing with live traffic. The difference between `duration` (with traffic) and `staticDuration` (without) gives an estimated border delay.
+
+## Setup
+
+### 1. Google Cloud Console
+
+1. Create a project at [console.cloud.google.com](https://console.cloud.google.com)
+2. Enable billing (required for API access; $200/month free credit included)
+3. Enable **Routes API** ([direct link](https://console.cloud.google.com/apis/library/routes.googleapis.com))
+4. Create an API key under **APIs & Services → Credentials**
+5. Restrict the key to **Routes API** only (for security)
+
+### 2. Install & Run
 
 ```bash
+git clone https://github.com/pepomes/border-wait-times.git
+cd border-wait-times
+npm install
+cp .env.example .env.local
+# Edit .env.local and add your API key
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Verify
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+curl http://localhost:3000/api/wait-times
+```
 
-## Learn More
+Should return JSON with all 6 crossings and wait time estimates.
 
-To learn more about Next.js, take a look at the following resources:
+## Environment Variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Variable | Required | Description |
+|---|---|---|
+| `GOOGLE_MAPS_API_KEY` | Yes | Server-only. Google Routes API key. Never exposed to the browser. |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See `.env.example` for the template.
 
-## Deploy on Vercel
+## Cost
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+~12 Routes API calls per refresh (6 crossings × 2 directions). With 15-min caching, that's ~1,150 calls/day at continuous usage. Google offers $200/month free credit which covers ~40,000 Routes API calls.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Limitations
+
+- Estimates are based on road traffic congestion, not actual border processing time
+- Low traffic doesn't guarantee fast processing; construction near borders can inflate estimates
+- Best accuracy during peak hours (Thursday/Friday evenings, holidays) when traffic correlates strongly with border queues
+
+## Tech Stack
+
+- Next.js 15 (App Router, TypeScript, Tailwind CSS v4)
+- Leaflet + react-leaflet (OpenStreetMap tiles)
+- Google Routes API (server-side only)
